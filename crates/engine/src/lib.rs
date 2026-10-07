@@ -95,6 +95,10 @@ pub type Result<T> = std::result::Result<T, EngineError>;
 pub trait Services: Send + Sync {
     fn read_file(&self, path: &str) -> std::io::Result<Vec<u8>>;
     fn write_file(&self, path: &str, data: &[u8]) -> std::io::Result<()>;
+    /// Publish a completed streamed output on platforms whose document picker returns a local mirror.
+    fn finish_export(&self, _path: &str) -> std::io::Result<()> {
+        Ok(())
+    }
     /// Size of a file in bytes (an error when it is missing). Hosts should override this: the
     /// default reads the whole file.
     fn file_size(&self, path: &str) -> std::io::Result<u64> {

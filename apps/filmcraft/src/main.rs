@@ -65,10 +65,10 @@ fn tell(text: &str, error: bool) {
     }
 }
 
-fn main() -> eframe::Result {
+pub fn main() -> eframe::Result {
     // lossy, so a value that is not Unicode is reported like any other bad port instead of ignored
     let env_port = std::env::var_os("FILMCRAFT_CONTROL_PORT").map(|p| p.to_string_lossy().into_owned());
-    let Launch { control_port, files, demo, startup_flag, recover, data_dir } = match args::parse(env_port, std::env::args().skip(1)) {
+    let Launch { control_port, files, demo, startup_flag, recover, data_dir } = match args::parse(env_port, app_args().skip(1)) {
         Ok(Cli::Run(l)) => l,
         Ok(Cli::Help) => {
             tell(args::USAGE, false);
@@ -91,6 +91,8 @@ fn main() -> eframe::Result {
     // Hardware decoding switches them off. Unsupported streams and failures use our decoders.
     register_hardware_decoders();
     let options = eframe::NativeOptions {
+        #[cfg(target_os = "android")]
+        android_app: rfd::android_app(),
         viewport: egui::ViewportBuilder::default()
             .with_title("FilmCraft")
             .with_inner_size([1600.0, 980.0])
@@ -109,9 +111,13 @@ fn main() -> eframe::Result {
     };
     let started = eframe::run_native(
         "FilmCraft",
-        options,
+        platform_options(options),
         Box::new(move |cc| {
             let mut session = Session::default();
+            #[cfg(target_os = "android")]
+            {
+                session.services = std::sync::Arc::new(android_files::AndroidFiles);
+            }
             if let Some(dir) = data_dir.clone().or_else(default_data_dir) {
                 let mut cfg = AutosaveConfig::new(dir);
                 cfg.local_offset = local_offset;
@@ -215,28 +221,35 @@ fn main() -> eframe::Result {
 /// Open a file in its default application, or reveal it in the file manager (Edit Original,
 /// Reveal Log Files).
 fn open_path(path: &str, reveal: bool) -> Result<(), String> {
-    let mut cmd = if cfg!(target_os = "macos") {
-        let mut c = std::process::Command::new("open");
-        if reveal {
-            c.arg("-R");
-        }
-        c.arg(path);
-        c
-    } else if cfg!(target_os = "windows") {
-        let mut c = std::process::Command::new("explorer");
-        if reveal {
-            c.arg(format!("/select,{path}"));
-        } else {
+    #[cfg(target_os = "android")]
+    {
+        if reveal { rfd::reveal(path) } else { rfd::that(path) }
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let mut cmd = if cfg!(target_os = "macos") {
+            let mut c = std::process::Command::new("open");
+            if reveal {
+                c.arg("-R");
+            }
             c.arg(path);
-        }
-        c
-    } else {
-        let mut c = std::process::Command::new("xdg-open");
-        let p = std::path::Path::new(path);
-        c.arg(if reveal { p.parent().unwrap_or(p) } else { p });
-        c
-    };
-    cmd.spawn().map(|_| ()).map_err(|e| format!("can't open {path}: {e}"))
+            c
+        } else if cfg!(target_os = "windows") {
+            let mut c = std::process::Command::new("explorer");
+            if reveal {
+                c.arg(format!("/select,{path}"));
+            } else {
+                c.arg(path);
+            }
+            c
+        } else {
+            let mut c = std::process::Command::new("xdg-open");
+            let p = std::path::Path::new(path);
+            c.arg(if reveal { p.parent().unwrap_or(p) } else { p });
+            c
+        };
+        cmd.spawn().map(|_| ()).map_err(|e| format!("can't open {path}: {e}"))
+    }
 }
 
 /// Put the OS hardware video decoders in front of our own. Registered in a statement of its own:
@@ -276,5 +289,43 @@ mod tests {
         assert!(!log::log_enabled!(log::Level::Info));
         let hardware = super::register_hardware_decoders();
         assert_eq!(filmcraft_platform::registered(), cfg!(target_os = "macos"), "{hardware:?}");
+    }
+}
+
+#[cfg(target_os = "android")]
+#[allow(unsafe_code)] // Android's loader requires this exact exported entry-point symbol.
+#[unsafe(no_mangle)]
+pub fn android_main(app: rfd::AndroidApp) {
+    if let Err(error) = rfd::initialize(app) {
+        eprintln!("Android initialization failed: {error}");
+        return;
+    }
+    if let Err(error) = main() {
+        rfd::report_error(&format!("Application failed: {error}"));
+    }
+}
+
+#[cfg(target_os = "android")]
+extern crate craft_android as arboard;
+#[cfg(target_os = "android")]
+extern crate craft_android as rfd;
+
+fn platform_options(options: eframe::NativeOptions) -> eframe::NativeOptions {
+    #[cfg(target_os = "android")]
+    let options = rfd::configure_options(options);
+    options
+}
+
+#[cfg(target_os = "android")]
+mod android_files;
+
+fn app_args() -> impl Iterator<Item = String> {
+    #[cfg(not(target_os = "android"))]
+    {
+        std::env::args()
+    }
+    #[cfg(target_os = "android")]
+    {
+        rfd::arguments().into_iter()
     }
 }

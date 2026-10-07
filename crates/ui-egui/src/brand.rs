@@ -1,7 +1,9 @@
 //! The ArtCraft wordmark (first-party trademark, used with permission; see `docs/brand/` and
 //! AGENTS.md §1.8), decoded once and kept as a texture.
 
+#[cfg(not(target_os = "android"))]
 const LOGO_LIGHT_INK: &[u8] = include_bytes!("../../../docs/brand/artcraft-logo-white.png");
+#[cfg(not(target_os = "android"))]
 const LOGO_DARK_INK: &[u8] = include_bytes!("../../../docs/brand/artcraft-logo.png");
 
 /// The wordmark for a dark (`dark = true`) or light UI: light ink on dark themes. Its aspect
@@ -31,3 +33,9 @@ pub fn paint_wordmark(ui: &egui::Ui, left_center: egui::Pos2, height: f32, dark:
     ui.painter().image(tex.id(), r, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
     Some(r)
 }
+
+// Modified Android distributions use the application icon, not the upstream trademark.
+#[cfg(target_os = "android")]
+const LOGO_LIGHT_INK: &[u8] = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/ai.storyteller.filmcraft.png");
+#[cfg(target_os = "android")]
+const LOGO_DARK_INK: &[u8] = LOGO_LIGHT_INK;

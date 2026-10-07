@@ -149,3 +149,12 @@ SHA-256 (`crates/speech/src/models.rs`, `docs/transcripts.md`).
 | Asset | Author | Source | Licence |
 |---|---|---|---|
 | Whisper tiny / base / small speech-recognition weights (`model.safetensors`, `config.json`, `generation_config.json`, `tokenizer.json`) | OpenAI | `https://huggingface.co/openai/whisper-{tiny,base,small}` (revisions `169d4a43…`, `e37978b9…`, `973afd24…`); weights released with `https://github.com/openai/whisper` | MIT (weights and code, github.com/openai/whisper); the Hugging Face conversion is labelled Apache-2.0 |
+
+## Android packaging assets
+
+| Path | Title | Author | Source | License |
+|---|---|---|---|---|
+| `packaging/android/res/` | Android themes, provider paths and adaptive-icon wrapper | FilmCraft Android contributors | Original work | MIT OR Apache-2.0; repository LICENSE-MIT / LICENSE-APACHE |
+| Generated `craft_icon.png`, `craft_monochrome.xml`, `craft-icon.xml` | Android launcher icon and silhouette | Original application-icon author (see `assets/app-icon/`) | Existing `assets/app-icon/filmcraft-small.svg` and PNG | Same as `assets/app-icon/LICENSE.txt`; geometry/color preserved |
+
+The APK includes asset/font/dependency license texts under `assets/licenses`. Restricted ArtCraft brand artwork is excluded from Android UI code; upstream source copies retain their original license.

@@ -762,6 +762,17 @@ impl FilmcraftApp {
     // ---------------------------------------------------------------- files
 
     pub fn file_dialog(&mut self, id: &str, params: &Value) -> Result<Value, String> {
+        #[cfg(target_os = "android")]
+        let _android_resume = {
+            let id = id.to_string();
+            let params = params.clone();
+            rfd::resume_with(move |app: &mut crate::FilmcraftApp| {
+                if let Err(e) = app.file_dialog(&id, &params) {
+                    rfd::report_error(&e);
+                }
+            })
+        };
+
         match id {
             "file.import" => {
                 let exts: Vec<&str> = filmcraft_media::VIDEO_EXTENSIONS
@@ -1217,6 +1228,9 @@ impl FilmcraftApp {
 
 impl eframe::App for FilmcraftApp {
     fn raw_input_hook(&mut self, _ctx: &egui::Context, raw_input: &mut egui::RawInput) {
+        #[cfg(target_os = "android")]
+        rfd::stylus_input(_ctx, raw_input);
+
         if !self.synthetic.is_empty() {
             // Pointer events go one per frame so egui sees press → moves → release as a real drag
             // (all in one frame reads as a click); key/text runs go together up to a key release.
@@ -1234,6 +1248,20 @@ impl eframe::App for FilmcraftApp {
     }
 
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        #[cfg(target_os = "android")]
+        if let Some((id, params)) = rfd::completed_command(ctx)
+            && let Err(e) = menus::invoke(self, ctx, &id, params)
+        {
+            rfd::report_error(&e);
+        }
+        #[cfg(target_os = "android")]
+        if let Some(callback) = rfd::take_callback::<Self>() {
+            callback(self);
+        }
+        #[cfg(target_os = "android")]
+        if rfd::dialog_pending() {
+            return;
+        }
         if !self.styled {
             theme::install(ctx, &self.tokens);
             // theme::install replaces the fonts: add the system Japanese font back (or fall back to
@@ -1331,3 +1359,6 @@ mod gpu_fallback_tests {
         assert_eq!(super::plan_side(&p), 4000);
     }
 }
+
+#[cfg(target_os = "android")]
+extern crate craft_android as rfd;

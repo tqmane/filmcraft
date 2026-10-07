@@ -7,8 +7,8 @@ license.workspace = true
 default-run = "filmcraft"
 build = "build.rs"
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "deny"
 
 [features]
 default = []
@@ -23,7 +23,6 @@ egui = { workspace = true }
 eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "wayland", "x11"] }
 serde_json = { workspace = true }
 log = { workspace = true }
-rfd = { workspace = true }
 cpal = "0.16"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 
@@ -38,3 +37,22 @@ winit = { version = "0.30", default-features = false }
 # Icon + VERSIONINFO for filmcraft.exe (build.rs); only needed when building on Windows.
 [target.'cfg(windows)'.build-dependencies]
 winresource = "0.1"
+
+[lib]
+path = "src/main.rs"
+crate-type = ["cdylib"]
+
+[target.'cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))'.dependencies]
+rfd = { workspace = true }
+
+[target.'cfg(target_os = "android")'.dependencies]
+craft-android = { package = "craft-android", path = "../../platform/android" }
+filmcraft-media = { workspace = true }
+eframe = { workspace = true, features = ["android-game-activity"] }
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+too_many_arguments = "allow"
+needless_range_loop = "allow"
+type_complexity = "allow"

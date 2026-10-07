@@ -69,6 +69,7 @@ const LAYERS: &[(&str, u8)] = &[
     ("format", 3),
     ("engine", 4),
     ("platform", 5),
+    ("craft-android", 5),
     ("ui-egui", 5),
     ("automation", 5),
     ("filmcraft", 6),
@@ -81,6 +82,7 @@ const L0_FOUNDATION: &[&str] = &["time", "geom", "color", "bitstream", "testkit"
 
 /// Allowed same-layer edges (from, to).
 const SAME_LAYER: &[(&str, &str)] = &[
+    ("ui-egui", "craft-android"),
     ("media", "frame"),
     ("project", "media"),
     ("project", "frame"),
@@ -144,7 +146,7 @@ fn layers() -> Result<(), String> {
             if l < 5 && UI_ONLY.contains(&d.as_str()) {
                 errors.push(format!("{name} (L{l}) depends on UI/OS crate `{d}`"));
             }
-            if !d.starts_with("filmcraft-") {
+            if !d.starts_with("filmcraft-") && d != "craft-android" {
                 continue;
             }
             let Some(dl) = layer_of(d) else { continue };

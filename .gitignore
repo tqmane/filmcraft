@@ -5,3 +5,8 @@ plan/
 /log
 .DS_Store
 .claude/worktrees/
+
+# Android local build output
+/packaging/android/build/
+/packaging/android/.gradle/
+/packaging/android/local.properties

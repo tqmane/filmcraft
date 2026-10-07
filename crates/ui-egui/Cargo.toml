@@ -45,3 +45,6 @@ filmcraft-codecs = { workspace = true }
 filmcraft-platform = { workspace = true }
 filmcraft-interchange = { workspace = true }
 egui_kittest = { workspace = true, features = ["eframe", "wgpu"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+craft-android = { path = "../../platform/android" }

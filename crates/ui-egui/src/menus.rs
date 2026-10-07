@@ -146,6 +146,8 @@ pub fn panel_command_id(p: PanelKind) -> String {
 
 /// Execute a UI or engine command by id.
 pub fn invoke(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: Value) -> Result<Value, String> {
+    #[cfg(target_os = "android")]
+    let _android_command = rfd::command(id, params.clone());
     if matches!(id, "app.language.english" | "app.language.japanese") {
         // Japanese needs the craft-fonts (built with CRAFT_FONTS_DIR) or a font installed on the system
         if id == "app.language.japanese" && !crate::i18n::install_japanese_font(ctx) {

@@ -54,6 +54,8 @@ impl AudioInput for CpalIn {
         device(&host(&self.host), name).and_then(|d| d.default_input_config().ok()).map(|c| c.channels()).unwrap_or(0)
     }
     fn start(&mut self, name: &str, sample_rate: u32) -> Result<InputFormat, String> {
+        #[cfg(target_os = "android")]
+        rfd::require_microphone_permission()?;
         self.stop();
         lock(&self.buf).clear();
         let (host_name, name) = (self.host.clone(), name.to_string());

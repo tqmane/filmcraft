@@ -379,8 +379,21 @@ pub fn spawn_export(s: &mut Session, project: Arc<Project>, seq: ItemId, mut set
         s.stepped.push(crate::SteppedJob { job: id, exporter, provider, progress: prog, result: res });
         return Ok(id);
     }
+    let services = s.services.clone();
     let run = move || {
-        let r = filmcraft_export::export(&project, seq, &settings, &provider, &prog).map_err(|e| e.to_string());
+        let r = filmcraft_export::export(&project, seq, &settings, &provider, &prog).map_err(|e| e.to_string()).and_then(|report| {
+            if matches!(format, filmcraft_export::Format::PngSequence | filmcraft_export::Format::TiffSequence | filmcraft_export::Format::BmpSequence) {
+                for frame in 0..report.frames {
+                    services.finish_export(&filmcraft_export::image_sequence_path(&settings.path, frame, report.frames)).map_err(|e| e.to_string())?;
+                }
+            } else {
+                services.finish_export(&report.path).map_err(|e| e.to_string())?;
+            }
+            for path in &report.extra_files {
+                services.finish_export(path).map_err(|e| e.to_string())?;
+            }
+            Ok(report)
+        });
         if let Err(e) = &r {
             *prog.error.lock().unwrap_or_else(|x| x.into_inner()) = Some(e.clone());
             prog.finished.store(true, Ordering::Relaxed);

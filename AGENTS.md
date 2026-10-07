@@ -141,3 +141,7 @@ as PhotoCraft does with `cargo xtask corpus`.
 - [docs/agents.md](docs/agents.md): driving FilmCraft over MCP / the control channel, and the agent work loop
 - [docs/control-protocol.md](docs/control-protocol.md): control-channel method reference
 - [ATTRIBUTION.md](ATTRIBUTION.md): asset index
+
+## Android port boundary
+
+The `android` branch also builds the original app as a GameActivity cdylib. Read `docs/android.md` before changing platform code. This port explicitly permits the small Java Android API adapter and the isolated `platform/android/src/native.rs` JNI boundary (two documented pointer conversions); exported Android entry-point attributes are allowed in the app shell. These exceptions do not relax the engine/UI safety or layering rules. Test only explicitly authorized devices with serial-qualified adb commands. Do not reboot a device without explicit authorization. Keep signing credentials and machine-specific build output out of Git. Distribution APKs are signed release builds containing arm64-v8a only.
